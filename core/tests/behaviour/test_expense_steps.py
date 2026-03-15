@@ -44,7 +44,6 @@ def check_total(context, total):
     assert context["service"].total_amount() == total
 
 
-@then(parsers.parse("{month_name} debe sumar {expected_total:d} euros"))
 def check_month_total(context, month_name, expected_total):
     total_actual = context["totals"].get(month_name, 0)
     assert total_actual == expected_total
@@ -52,5 +51,31 @@ def check_month_total(context, month_name, expected_total):
 
 @then(parsers.parse("debe haber {expenses:d} gastos registrados"))
 def check_expenses_length(context, expenses):
-    total = len(context["db"]._expenses)
+    total = len(context["service"].list_expenses())
     assert expenses == total
+
+
+@when("trato de agregar un gasto con titulo vacio")
+def try_add_empty_title(context):
+    try:
+        context["service"].create_expense(
+            title="", amount=10, description="", expense_date=date.today()
+        )
+    except Exception as e:
+        context["last_error"] = e
+
+
+@when("trato de agregar un gasto con cantidad negativa")
+def try_add_negative_amount(context):
+    try:
+        context["service"].create_expense(
+            title="Test", amount=-5, description="", expense_date=date.today()
+        )
+    except Exception as e:
+        context["last_error"] = e
+
+
+@then("el gestor debe lanzar un error")
+def check_error_thrown(context):
+    assert "last_error" in context
+    assert context["last_error"] is not None
